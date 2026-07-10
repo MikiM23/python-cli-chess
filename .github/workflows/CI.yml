@@ -1,0 +1,46 @@
+name: Continuous Integration (CI)
+
+on:
+  pull_request:
+    paths:
+      - "scacchi/**"
+      - "tests/**"
+      - "pyproject.toml"
+  workflow_call:
+
+jobs:
+  static-analysis-and-testing:
+    name: Static Analysis and Testing
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock" # the chache is invalidated when uv.lock changes
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+
+      - name: Install the dev dependencies of the project
+        run: uv sync --dev
+
+      - name: Run static analysis with Ruff
+        run: |
+          echo "### Ruff results" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          uv run ruff check --exit-zero >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+    # - name: Run testing with Pytest
+    #   run: |
+    #     echo "### pytest results" >> $GITHUB_STEP_SUMMARY
+    #     echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+    #     uv run pytest -v --cov=scacchi --cov-report term tests/ >> $GITHUB_STEP_SUMMARY
+    #     echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
